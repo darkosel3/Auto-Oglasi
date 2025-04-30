@@ -1,64 +1,37 @@
+using CarAds.Models;
+using MongoDB.Bson;
+using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 
 namespace CarAds.Services
 {
     public class AdService : IAdService
     {
-        private readonly CarAdsDbContex _carAdsDbContext;
+        private readonly CarAdsDBContext _carAdsDbContext;
 
-        public AdsService(CarAdsDbContex carAdsDbContext)
+        public AdService(CarAdsDBContext carAdsDbContext)
         {
             _carAdsDbContext = carAdsDbContext;
         }
 
         public void AddAd(Ad ad)
         {
-            _carAdsDbContext.Ads.Add(ad);
-
-            _carAdsDbContext.ChangeTracker.DetectChanges();
-            Console.WriteLine(_carAdsDbContext.ChangeTracker.DebugView.LongView)
-
-            _carAdsDbContext.SaveChanges();
+            _carAdsDbContext.Ads.InsertOne(ad);
         }
 
-        public void DeleteAd DeleteAd(Ad ad)
+        public void DeleteAd(Ad ad)
         {
-            var adToDelete = _carAdsDbContext.Ads.Where(a => a.Id == ad.Id).FirstOrDefault();
-
-            if (adToDelete != null)
-            {
-                _carAdsDbContext.Ads.Remove(adToDelete);
-                _carAdsDbContext.ChangeTracker.DetectChanges();
-                Console.WriteLine(_carAdsDbContext.ChangeTracker.DebugView.LongView);
-                _carAdsDbContext.SaveChanges();
-            }
-            else
-            {
-                throw new ArgumentException("The ad to delete cannot be found.");
-            }
+             var result = _carAdsDbContext.Ads.DeleteOne(a => a.Id == ad.Id);
+            if (result.DeletedCount == 0)
+                throw new ArgumentException("Ad not found.");
         }
 
         public void EditAd(Ad ad)
         {
-            var adToUpdate = _carAdsDbContext.Ads.FirstOrDefault(a => a.Id == ad.Id);
-            if (adToUpdate != null)
-            {
-                adToUpdate.Title = ad.Title;
-                adToUpdate.Brand = ad.Brand
-                adToUpdate.Model = ad.Model;
-                adToUpdate.Year = ad.Year;
-                adToUpdate.Price = ad.Price;
-                adToUpdate.Kilometers = ad.Kilometers;
-                adToUpdate.Category = ad.Category;
-                adToUpdate.Description = ad.Description;
-                adToUpdate.Created = ad.Created;
-
-                _carAdsDbContext.Ads.Update(adToUpdate);
-
-                _carAdsDbContext.ChangeTracker.DetectChanges();
-                Console.WriteLine(_carAdsDbContext.ChangesTracker.DebugView.LongView);
-                _carAdsDbContext.SaveChanges();
-            }
-            else
+            var filter = Builders<Ad>.Filter.Eq(a => a.Id, ad.Id);
+            var result = _carAdsDbContext.Ads.ReplaceOne(filter, ad);
+    
+             if (result.MatchedCount == 0)
             {
                 throw new ArgumentException("Ad to update cannot be found.");
             }
@@ -66,12 +39,12 @@ namespace CarAds.Services
 
         public IEnumerable<Ad> GetAllAds()
         {
-            return _carAdsDbContext.Ads.OrderBy(a => a.Id).AsNoTracking().AsEnumerable<Ad>()
+            return _carAdsDbContext.Ads.Find(_ => true).ToEnumerable();
         }
 
         public Ad? GetAdById(ObjectId id)
         {
-            return _carAdsDbContext.Ads.FirstOrDefault(ad => ad.Id == id);
+            return _carAdsDbContext.Ads.Find(a => a.Id == id).FirstOrDefault();
         }
 
 

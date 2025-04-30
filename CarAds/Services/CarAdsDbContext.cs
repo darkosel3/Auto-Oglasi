@@ -1,30 +1,33 @@
 using Microsoft.EntityFrameworkCore;
-using CarAds.Models; // Importuj modele i Entiti Framework
+using CarAds.Models;
+using MongoDB.Driver;
 
 namespace CarAds.Services
 {
-    public class CarAdsDBContext : DbContext //extend DB context for EF core
+    public class CarAdsDBContext  //extend DB context for EF core
     {
-        public DbSet<User> Users { get; init; } //Ef core will use this to perform crud operation on users
+        private readonly IMongoDatabase _database;
 
-        public DbSet<Ad> Ads { get; init; }//Ef core will use this to perform crud operation on Ads
+        public IMongoCollection<Ad> Ads { get; init; }
+
 
 
         //This allows EF core to configure DBContext specify DB provider and connection string
-        public CarAdsDBContext(DbContextOptions options) : base(options)
-        {
-
+        public CarAdsDBContext(string connectionString, string databaseName){
+            var client = new MongoClient(connectionString);
+            _database = client.GetDatabase(databaseName);
+            
+            Ads = _database.GetCollection<Ad>("Ads");
         }
 
 
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-            //this is importat to set model relationships
-            modelBuilder.Entity<User>();
-            modelBuilder.Entity<Ad>();
-        }
+        // protected override void OnModelCreating(ModelBuilder modelBuilder)
+        // {
+        //     base.OnModelCreating(modelBuilder);
+        //     //this is importat to set model relationships
+        //     modelBuilder.Entity<ApplicationUser>();
+        //     modelBuilder.Entity<Ad>();
+        // }
 
     }
 

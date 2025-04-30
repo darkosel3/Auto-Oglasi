@@ -37,7 +37,7 @@ namespace CarAds.Models
         public int Description { get; set; }
 
         [BsonElement("created")]
-        public int Created { get; set; }
+        public DateTime Created { get; set; }
 
         [BsonElement("sellerId")]
         public ObjectId SellerId { get; set; }  // Referenca na User

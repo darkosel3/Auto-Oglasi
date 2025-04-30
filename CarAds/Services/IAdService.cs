@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson;
+using MongoDB.Driver;
 using CarAds.Models;
 
 namespace CarAds.Services
@@ -6,7 +8,7 @@ namespace CarAds.Services
     public interface IAdService
     {
         IEnumerable<Ad> GetAllAds();
-        Ad? GetAdById(int id);
+        Ad? GetAdById(ObjectId id);
 
         void AddAd(Ad ad);
         void EditAd(Ad updatedAd);

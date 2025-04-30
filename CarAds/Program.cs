@@ -1,21 +1,42 @@
 using CarAds.Models;
 using CarAds.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using AspNetCore.Identity.Mongo;
+
+using AspNetCore.Identity.Mongo.Model;
+using MongoDB.Driver;
+using System.Numerics;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var mongoDBSettings = builder.Configuration.GetSection("MongoDBSettings").Get<MongoDBSettings>(); // Where is the data?
+
+// builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDBSettings")); // Remember this information so everyone can access the data!
+builder.Services.AddIdentityMongoDbProvider<ApplicationUser, ApplicationRole, Guid>(identityOptions => {
+    // Regular identity options here if needed
+    // identityOptions.Password.RequiredLength = 6;
+}, mongoOptions => { 
+    mongoOptions.ConnectionString = mongoDBSettings.AtlasURI + "/" + mongoDBSettings.DatabaseName;
+});
+
+// Add this before builder.Services.AddScoped<IAdService, AdService>()
+builder.Services.AddScoped<CarAdsDBContext>(sp => 
+{
+    // Create the MongoDB context with the same connection as identity
+    return new CarAdsDBContext(
+        mongoDBSettings.AtlasURI + "/" + mongoDBSettings.DatabaseName,
+        mongoDBSettings.DatabaseName);
+});
+
+
+builder.Services.AddScoped<IAdService,AdService>();
+
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-var mongoDBSettings = builder.Configuration.GetSection("MongoDBSettings").Get<MongoDBSettings>(); // Where is the data?
 
-builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("MongoDBSettings")); // Remember this information so everyone can access the data!
-
-builder.Services.AddDbContext<CarAdsDBContext>(options => options.UseMongoDB(mongoDBSettings.AtlasURI ?? "", mongoDBSettings.DatabaseName ?? ""));
-//How to connect to data
-
-builder.Services.AddScoped<IAdService><AdService>();
-builder.Services.AddScoped<IUserService><UserService>();
 
 var app = builder.Build();
 
